@@ -1,0 +1,6 @@
+# dsh-ctrl-enter-submit bundle patch
+# 插入一个空的 carrier 行使该 Bundle 拥有一个 Loader 条目（出现在插件列表中）。
+# 实际功能全部在 client.js 中实现（浏览器端键盘拦截）。
+- insert:
+    - id: ctrl-enter-submit
+      name: 'dsh-ctrl-enter-submit'
