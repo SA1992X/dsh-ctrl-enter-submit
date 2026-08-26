@@ -46,9 +46,13 @@ window.__ModuleLoader__.load({
     /** keyCode 229 表示浏览器正在处理输入法组合。 */
     const IME_PROCESSING_KEYCODE = 229;
 
-    /** Enter 被修饰键（Ctrl/Cmd/Shift）按住时，交给 DSH/浏览器原生处理。 */
-    function hasSubmitOrNewlineModifier(e) {
-      return e.ctrlKey || e.metaKey || e.shiftKey;
+    /**
+     * 是否为提交修饰键。仅 Ctrl/Cmd 触发提交。
+     * 注意：Shift+Enter 不是提交——DSH 原生命中它会提交，因此这里必须
+     * 拦截下来让 textarea 原生换行，不能像 Ctrl/Cmd 一样放行给 DSH。
+     */
+    function hasSubmitModifier(e) {
+      return e.ctrlKey || e.metaKey;
     }
 
     /** 是否处于输入法组合状态（中文/日文/韩文输入等）。 */
@@ -65,10 +69,10 @@ window.__ModuleLoader__.load({
       // Let another capture-phase listener own the key if it already did.
       if (e.defaultPrevented) return;
 
-      // Ctrl/Cmd+Enter 提交，Shift+Enter 换行：均放行。
-      if (hasSubmitOrNewlineModifier(e)) return;
+      // Ctrl/Cmd+Enter：放行，由 DSH 处理提交。
+      if (hasSubmitModifier(e)) return;
 
-      // 输入法组合中：放行。
+      // 输入法组合中：放行（普通 Enter 用于确认候选词，Shift+Enter 由浏览器处理）。
       if (isComposing(e)) return;
 
       if (!isComposerTextarea(e.target)) return;
@@ -76,8 +80,9 @@ window.__ModuleLoader__.load({
       // 触发菜单（/、@）可见时，让 Enter 正常选择菜单项。
       if (isTriggerMenuVisible()) return;
 
-      // 普通 Enter：阻止冒泡到 React 的 onKeyDown（即 DSH 的提交处理器），
-      // 但不阻止默认行为，textarea 会自行插入换行。
+      // 普通 Enter 或 Shift+Enter：阻止冒泡到 React 的 onKeyDown（即 DSH 的
+      // 提交处理器——DSH 原生对两者都会提交），但不阻止默认行为，textarea 会
+      // 自行插入换行。
       e.stopImmediatePropagation();
     }
 

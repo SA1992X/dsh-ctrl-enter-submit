@@ -13,7 +13,7 @@ DeepSeek Harness (DSH) 插件：将对话框的提交快捷键从 **Enter** 改�
 |---|---|---|
 | Enter | 换行（不提交） | 提交消息 |
 | Ctrl/Cmd+Enter | 提交消息 | 提交消息（DSH 原本就支持） |
-| Shift+Enter | 换行（不变） | 换行（不变） |
+| Shift+Enter | 换行 | 提交消息（DSH 原生行为） |
 
 `/` 和 `@` 触发菜单打开时，Enter 仍然正常选择菜单项，不会被拦截。输入法组合状态下也不会被拦截。
 
@@ -46,7 +46,7 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 插件在浏览器端的 `document` 捕获阶段拦截 `keydown` 事件：
 
 - 目标限定为 composer 内的 `textarea`
-- 普通 Enter（无 Ctrl/Cmd/Shift 修饰、非输入法组合、非 `/`/`@` 菜单打开）：调用 `stopImmediatePropagation()` 阻止事件冒泡到 React 的 `onKeyDown` 处理器（即 DSH 的提交逻辑），但不调用 `preventDefault()`，因此 textarea 照常换行
+- 普通 Enter 与 Shift+Enter（无 Ctrl/Cmd 修饰、非输入法组合、非 `/`/`@` 菜单打开）：调用 `stopImmediatePropagation()` 阻止事件冒泡到 React 的 `onKeyDown` 处理器（即 DSH 的提交逻辑），但不调用 `preventDefault()`，因此 textarea 照常换行
 - Ctrl/Cmd+Enter：放行，由 DSH 正常提交
 - 插件 Host 端为空操作，所有功能均在浏览器 Client 端实现
 
@@ -76,7 +76,7 @@ A DeepSeek Harness (DSH) plugin that changes the composer submit shortcut from *
 |---|---|---|
 | Enter | Newline (no submit) | Submits the message |
 | Ctrl/Cmd+Enter | Submits the message | Submits (DSH supports this natively) |
-| Shift+Enter | Newline (unchanged) | Newline (unchanged) |
+| Shift+Enter | Newline | Submits the message (DSH native behavior) |
 
 When the `/` or `@` candidate menu is open, Enter selects the highlighted item as usual. IME composition is never intercepted.
 
@@ -108,7 +108,7 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 
 The plugin intercepts `keydown` on `document` during the capture phase, scoped to the composer `textarea`:
 
-- Plain Enter (no Ctrl/Cmd/Shift, not composing, no `/`/`@` menu open) calls `stopImmediatePropagation()` so React's `onKeyDown` handler (DSH's submit logic) never sees it, but it does **not** call `preventDefault()`, so the textarea inserts a newline normally.
+- Plain Enter and Shift+Enter (no Ctrl/Cmd modifier, not composing, no `/`/`@` menu open) call `stopImmediatePropagation()` so React's `onKeyDown` handler (DSH's submit logic) never sees it, but it does **not** call `preventDefault()`, so the textarea inserts a newline normally. Note DSH natively submits on Shift+Enter too, so the plugin also intercepts it to produce a newline.
 - Ctrl/Cmd+Enter is left untouched and submits as usual.
 - The host entry is a no-op; all behavior lives in the browser client.
 
