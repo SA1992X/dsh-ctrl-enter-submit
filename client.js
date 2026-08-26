@@ -49,6 +49,9 @@ window.__ModuleLoader__.load({
     function handleKeyDown(e) {
       if (e.key !== 'Enter') return;
 
+      // Let another capture-phase listener own the key if it already did.
+      if (e.defaultPrevented) return;
+
       // Ctrl/Cmd+Enter 组合键：放行，让 DSH 正常提交。
       if (e.ctrlKey || e.metaKey) return;
 
