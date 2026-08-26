@@ -43,6 +43,19 @@ window.__ModuleLoader__.load({
       return target.closest('[data-composer-card]') !== null;
     }
 
+    /** keyCode 229 表示浏览器正在处理输入法组合。 */
+    const IME_PROCESSING_KEYCODE = 229;
+
+    /** Enter 被修饰键（Ctrl/Cmd/Shift）按住时，交给 DSH/浏览器原生处理。 */
+    function hasSubmitOrNewlineModifier(e) {
+      return e.ctrlKey || e.metaKey || e.shiftKey;
+    }
+
+    /** 是否处于输入法组合状态（中文/日文/韩文输入等）。 */
+    function isComposing(e) {
+      return e.isComposing || e.keyCode === IME_PROCESSING_KEYCODE;
+    }
+
     /**
      * 捕获阶段 keydown 处理器。
      */
@@ -52,14 +65,11 @@ window.__ModuleLoader__.load({
       // Let another capture-phase listener own the key if it already did.
       if (e.defaultPrevented) return;
 
-      // Ctrl/Cmd+Enter 组合键：放行，让 DSH 正常提交。
-      if (e.ctrlKey || e.metaKey) return;
-
-      // Shift+Enter：放行（原生换行，DSH 也不会提交）。
-      if (e.shiftKey) return;
+      // Ctrl/Cmd+Enter 提交，Shift+Enter 换行：均放行。
+      if (hasSubmitOrNewlineModifier(e)) return;
 
       // 输入法组合中：放行。
-      if (e.isComposing || e.keyCode === 229) return;
+      if (isComposing(e)) return;
 
       if (!isComposerTextarea(e.target)) return;
 
