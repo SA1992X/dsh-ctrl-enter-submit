@@ -31,7 +31,8 @@ window.__ModuleLoader__.load({
      */
     function isTriggerMenuVisible() {
       const menu = document.querySelector('[data-composer-card] [role="listbox"]');
-      return menu !== null && menu.offsetParent !== null;
+      // offsetParent is an HTMLElement-only property; guard for non-element matches.
+      return menu instanceof HTMLElement && menu.offsetParent !== null;
     }
 
     /**
@@ -67,11 +68,17 @@ window.__ModuleLoader__.load({
       e.stopImmediatePropagation();
     }
 
+    let registered = false;
+
     /**
      * Cordis 插件入口。
      * @param {object} ctx - Cordis 客户端上下文
      */
     function apply(ctx) {
+      // Guard against double registration under HMR / repeated apply.
+      if (registered) return;
+      registered = true;
+
       // 在捕获阶段注册，确保早于 React 在 root 上的冒泡监听。
       document.addEventListener('keydown', handleKeyDown, true);
 
@@ -79,6 +86,7 @@ window.__ModuleLoader__.load({
       ctx.effect(() => {
         return () => {
           document.removeEventListener('keydown', handleKeyDown, true);
+          registered = false;
         };
       }, 'ctrl-enter-submit: keydown interceptor');
     }
