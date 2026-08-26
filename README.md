@@ -55,6 +55,14 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 - 需要 dsh web `0.1.0-rc.6` 或更高版本
 - 在 Windows、macOS、Linux 上均可工作（Ctrl 和 Cmd 都识别）
 
+## 本地开发
+
+用本地路径以链接方式安装，改完 `client.js` 后刷新浏览器即可看到效果，无需重新发布：
+
+```bash
+dsh plugin --profile web add ./dsh-ctrl-enter-submit
+```
+
 ---
 
 <a name="english"></a>
