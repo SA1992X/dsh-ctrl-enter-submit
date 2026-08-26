@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./index.js",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "author": "SA1992X",
   "repository": {
     "type": "git",
