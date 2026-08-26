@@ -1,5 +1,8 @@
 # dsh-ctrl-enter-submit
 
+[![npm version](https://img.shields.io/npm/v/dsh-ctrl-enter-submit)](https://www.npmjs.com/package/dsh-ctrl-enter-submit)
+[![license](https://img.shields.io/npm/l/dsh-ctrl-enter-submit)](./LICENSE)
+
 [English](#english) | 中文
 
 DeepSeek Harness (DSH) 插件：将对话框的提交快捷键从 **Enter** 改为 **Ctrl/Cmd+Enter**，普通 Enter 用于换行。可在「设置 → 插件」中随时开关，禁用后恢复默认行为。
