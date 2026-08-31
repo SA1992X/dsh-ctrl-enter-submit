@@ -1,6 +1,6 @@
 {
   "name": "dsh-ctrl-enter-submit",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "DeepSeek Harness 插件：将对话框提交快捷键改为 Ctrl/Cmd+Enter，普通 Enter 换行，可在设置中随时开关。 / A DSH plugin that makes Enter insert a newline and Ctrl/Cmd+Enter submit, toggleable in settings.",
   "type": "module",
   "main": "./index.js",

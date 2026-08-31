@@ -1,17 +1,22 @@
 /**
  * dsh-ctrl-enter-submit — Client 端
  *
- * 在浏览器中拦截对话框 textarea 的键盘事件：
+ * 在浏览器中拦截文本输入控件的键盘事件：
  *   - 插件启用时：普通 Enter 换行（阻止 DSH 默认的提交行为），
  *     Ctrl/Cmd+Enter 触发提交。
  *   - 插件禁用/卸载时：移除监听器，恢复默认行为。
  *
+ * 覆盖两类输入场景：
+ *   1. 主对话框 composer（容器 [data-composer-card] 内的 textarea）。
+ *   2. Agent 提问卡片（ask_user_question）的多行自由输入
+ *      （容器 [data-question-key] 内的 textarea）。
+ *   单行 input（如问答卡片的单行自定义答案）保持原生 Enter 提交——
+ *   单行控件里 Enter 换行没有意义。
+ *
  * 实现方式：
- *   在 document 捕获阶段监听 keydown，目标限定为 composer textarea。
- *   当 / 或 @ 触发菜单打开时，不拦截 Enter，让用户正常选择菜单项。
- *   其他情况下，对普通 Enter 调用 stopImmediatePropagation() 阻止 React
- *   合成事件处理器（DSH 的提交逻辑），同时不调用 preventDefault()，
- *   保留 textarea 原生换行。
+ *   在 document 捕获阶段监听 keydown。对需要接管的 textarea，普通 Enter 与
+ *   Shift+Enter 调用 stopImmediatePropagation() 阻止 React 的提交处理器，
+ *   但不调用 preventDefault()，保留原生换行；Ctrl/Cmd+Enter 放行给 DSH 提交。
  */
 
 window.__ModuleLoader__.load({
@@ -36,11 +41,27 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * 判断事件目标是否是 composer 内的 textarea。
+     * 判断事件目标是否是主对话框 composer 内的 textarea。
      */
     function isComposerTextarea(target) {
       if (!(target instanceof HTMLTextAreaElement)) return false;
       return target.closest('[data-composer-card]') !== null;
+    }
+
+    /**
+     * 判断事件目标是否是 Agent 提问卡片（ask_user_question）内的多行 textarea。
+     * 卡片容器带 data-question-key；其单行 input 不在接管范围内。
+     */
+    function isQuestionTextarea(target) {
+      if (!(target instanceof HTMLTextAreaElement)) return false;
+      return target.closest('[data-question-key]') !== null;
+    }
+
+    /**
+     * 判断目标是否是本插件要接管的输入控件（composer 或问答卡片的 textarea）。
+     */
+    function isManagedTextarea(target) {
+      return isComposerTextarea(target) || isQuestionTextarea(target);
     }
 
     /** keyCode 229 表示浏览器正在处理输入法组合。 */
@@ -69,20 +90,20 @@ window.__ModuleLoader__.load({
       // Let another capture-phase listener own the key if it already did.
       if (e.defaultPrevented) return;
 
-      // Ctrl/Cmd+Enter：放行，由 DSH 处理提交。
+      // Ctrl/Cmd+Enter：放行，由 DSH 处理提交（composer 与问答卡片均支持）。
       if (hasSubmitModifier(e)) return;
 
       // 输入法组合中：放行（普通 Enter 用于确认候选词，Shift+Enter 由浏览器处理）。
       if (isComposing(e)) return;
 
-      if (!isComposerTextarea(e.target)) return;
+      if (!isManagedTextarea(e.target)) return;
 
-      // 触发菜单（/、@）可见时，让 Enter 正常选择菜单项。
-      if (isTriggerMenuVisible()) return;
+      // 触发菜单（/、@）仅存在于 composer：可见时让 Enter 正常选择菜单项。
+      if (isComposerTextarea(e.target) && isTriggerMenuVisible()) return;
 
       // 普通 Enter 或 Shift+Enter：阻止冒泡到 React 的 onKeyDown（即 DSH 的
-      // 提交处理器——DSH 原生对两者都会提交），但不阻止默认行为，textarea 会
-      // 自行插入换行。
+      // 提交处理器——composer 与问答卡片原生对两者都会提交），但不阻止默认
+      // 行为，textarea 会自行插入换行。
       e.stopImmediatePropagation();
     }
 

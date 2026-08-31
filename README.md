@@ -5,15 +5,17 @@
 
 [English](#english) | 中文
 
-DeepSeek Harness (DSH) 插件：将对话框的提交快捷键从 **Enter** 改为 **Ctrl/Cmd+Enter**，普通 Enter 用于换行。可在「设置 → 插件」中随时开关，禁用后恢复默认行为。
+DeepSeek Harness (DSH) 插件：将文本输入的提交快捷键从 **Enter** 改为 **Ctrl/Cmd+Enter**，普通 Enter 用于换行。覆盖主对话框与 Agent 提问卡片（`ask_user_question`）的多行输入框；可在「设置 → 插件」中随时开关，禁用后恢复默认行为。
 
 ## 行为
 
 | 按键 | 插件启用时 | 插件禁用后 |
 |---|---|---|
-| Enter | 换行（不提交） | 提交消息 |
-| Ctrl/Cmd+Enter | 提交消息 | 提交消息（DSH 原本就支持） |
+| Enter | 换行（不提交） | 提交消息 / 回答 |
+| Ctrl/Cmd+Enter | 提交消息 / 回答 | 提交（DSH 原本就支持） |
 | Shift+Enter | 换行 | 提交消息（DSH 原生行为） |
+
+适用范围：主对话框 composer、Agent 提问卡片的**多行** textarea。提问卡片里的单行 input 保持原生 Enter 确认（单行框不需要换行）。
 
 `/` 和 `@` 触发菜单打开时，Enter 仍然正常选择菜单项，不会被拦截。输入法组合状态下也不会被拦截。
 
@@ -68,15 +70,17 @@ dsh plugin --profile web add ./dsh-ctrl-enter-submit
 <a name="english"></a>
 # English
 
-A DeepSeek Harness (DSH) plugin that changes the composer submit shortcut from **Enter** to **Ctrl/Cmd+Enter**, so plain Enter inserts a newline. Toggle it on/off anytime in **Settings → Plugins**; disabling restores the default Enter-submit behavior.
+A DeepSeek Harness (DSH) plugin that changes the submit shortcut from **Enter** to **Ctrl/Cmd+Enter**, so plain Enter inserts a newline. It covers both the main composer and the agent question card (`ask_user_question`) multiline textarea. Toggle it on/off anytime in **Settings → Plugins**; disabling restores the default Enter-submit behavior.
 
 ## Behavior
 
 | Key | Plugin enabled | Plugin disabled |
 |---|---|---|
-| Enter | Newline (no submit) | Submits the message |
-| Ctrl/Cmd+Enter | Submits the message | Submits (DSH supports this natively) |
+| Enter | Newline (no submit) | Submits the message / answer |
+| Ctrl/Cmd+Enter | Submits the message / answer | Submits (DSH supports this natively) |
 | Shift+Enter | Newline | Submits the message (DSH native behavior) |
+
+Scope: the main composer and the **multiline** textarea of the agent question card. Single-line inputs in question cards keep their native Enter-to-confirm behavior (a single-line field has no use for a newline).
 
 When the `/` or `@` candidate menu is open, Enter selects the highlighted item as usual. IME composition is never intercepted.
 
