@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2026-08-27
 
 ### Added
-- The Ctrl/Cmd+Enter submit / plain-Enter newline behavior now also applies to the **agent question card** (`ask_user_question`) multiline textarea, not just the main composer. Single-line inputs keep their native Enter-to-confirm behavior.
+- The Ctrl/Cmd+Enter submit / plain-Enter newline behavior now also applies to the **agent question card** (`ask_user_question`):
+  - Multiline textarea: plain Enter and Shift+Enter insert a newline, Ctrl/Cmd+Enter advances/submits.
+  - Single-line custom-answer input: plain Enter does nothing, Ctrl/Cmd+Enter advances/submits.
+  - Option buttons (radio/checkbox): plain Enter no longer selects/advances (avoids accidental submit); mouse click and Space still select, and Ctrl/Cmd+Enter submits once all questions are answered.
 
 ## [1.0.1] - 2026-08-27
 

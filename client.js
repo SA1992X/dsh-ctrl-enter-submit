@@ -8,15 +8,18 @@
  *
  * 覆盖两类输入场景：
  *   1. 主对话框 composer（容器 [data-composer-card] 内的 textarea）。
- *   2. Agent 提问卡片（ask_user_question）的多行自由输入
- *      （容器 [data-question-key] 内的 textarea）。
- *   单行 input（如问答卡片的单行自定义答案）保持原生 Enter 提交——
- *   单行控件里 Enter 换行没有意义。
+ *   2. Agent 提问卡片（ask_user_question）：
+ *      - 多行 textarea：普通 Enter / Shift+Enter 换行，Ctrl/Cmd+Enter 下一题/提交；
+ *      - 单行 input：普通 Enter 不动作（单行无换行），Ctrl/Cmd+Enter 下一题/提交；
+ *      - 选项按钮（radio/checkbox）：普通 Enter 不选中/不跳题（避免误触），
+ *        鼠标点击与空格选择不受影响，Ctrl/Cmd+Enter 在全部答完时可提交。
  *
  * 实现方式：
- *   在 document 捕获阶段监听 keydown。对需要接管的 textarea，普通 Enter 与
+ *   在 document 捕获阶段监听 keydown。对多行 textarea，普通 Enter 与
  *   Shift+Enter 调用 stopImmediatePropagation() 阻止 React 的提交处理器，
- *   但不调用 preventDefault()，保留原生换行；Ctrl/Cmd+Enter 放行给 DSH 提交。
+ *   但不调用 preventDefault()，保留原生换行；对单行 input 与选项按钮，普通
+ *   Enter 额外调用 preventDefault() 以彻底抵消原生激活行为；Ctrl/Cmd+Enter
+ *   一律放行给 DSH 提交/下一题。
  */
 
 window.__ModuleLoader__.load({
@@ -50,7 +53,7 @@ window.__ModuleLoader__.load({
 
     /**
      * 判断事件目标是否是 Agent 提问卡片（ask_user_question）内的多行 textarea。
-     * 卡片容器带 data-question-key；其单行 input 不在接管范围内。
+     * 卡片容器带 data-question-key；单行 input 与选项按钮见下方专门判断。
      */
     function isQuestionTextarea(target) {
       if (!(target instanceof HTMLTextAreaElement)) return false;
@@ -62,6 +65,28 @@ window.__ModuleLoader__.load({
      */
     function isManagedTextarea(target) {
       return isComposerTextarea(target) || isQuestionTextarea(target);
+    }
+
+    /**
+     * 判断事件目标是否是提问卡片内的单行文本 input（自定义答案框）。
+     */
+    function isQuestionInput(target) {
+      if (!(target instanceof HTMLInputElement)) return false;
+      if (target.type !== 'text' && target.type !== 'search' &&
+          target.type !== 'url' && target.type !== 'email' &&
+          target.type !== '' && target.type !== undefined) return false;
+      return target.closest('[data-question-key]') !== null;
+    }
+
+    /**
+     * 判断事件目标是否是提问卡片内的选项按钮（role=radio/checkbox）。
+     * 排除底部的翻页/提交/取消等操作按钮（它们没有这些 role）。
+     */
+    function isQuestionOptionButton(target) {
+      if (!(target instanceof HTMLButtonElement)) return false;
+      const role = target.getAttribute('role');
+      if (role !== 'radio' && role !== 'checkbox') return false;
+      return target.closest('[data-question-key]') !== null;
     }
 
     /** keyCode 229 表示浏览器正在处理输入法组合。 */
@@ -90,21 +115,40 @@ window.__ModuleLoader__.load({
       // Let another capture-phase listener own the key if it already did.
       if (e.defaultPrevented) return;
 
-      // Ctrl/Cmd+Enter：放行，由 DSH 处理提交（composer 与问答卡片均支持）。
+      // Ctrl/Cmd+Enter：放行，由 DSH 处理提交/下一题（各类控件均支持）。
       if (hasSubmitModifier(e)) return;
 
-      // 输入法组合中：放行（普通 Enter 用于确认候选词，Shift+Enter 由浏览器处理）。
-      if (isComposing(e)) return;
+      const target = e.target;
 
-      if (!isManagedTextarea(e.target)) return;
+      // ── 多行 textarea（composer 与问答卡片）──
+      if (isManagedTextarea(target)) {
+        // 输入法组合中：放行（普通 Enter 用于确认候选词）。
+        if (isComposing(e)) return;
+        // 触发菜单（/、@）仅存在于 composer：可见时让 Enter 正常选择菜单项。
+        if (isComposerTextarea(target) && isTriggerMenuVisible()) return;
+        // 普通 Enter 或 Shift+Enter：阻止 React 的提交处理器，但不阻止默认
+        // 行为，textarea 会自行插入换行。
+        e.stopImmediatePropagation();
+        return;
+      }
 
-      // 触发菜单（/、@）仅存在于 composer：可见时让 Enter 正常选择菜单项。
-      if (isComposerTextarea(e.target) && isTriggerMenuVisible()) return;
+      // ── 提问卡片的单行 input ──
+      if (isQuestionInput(target)) {
+        if (isComposing(e)) return;
+        // 单行框无换行需求：阻止 React 的下一题/提交，并抵消默认激活行为。
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
 
-      // 普通 Enter 或 Shift+Enter：阻止冒泡到 React 的 onKeyDown（即 DSH 的
-      // 提交处理器——composer 与问答卡片原生对两者都会提交），但不阻止默认
-      // 行为，textarea 会自行插入换行。
-      e.stopImmediatePropagation();
+      // ── 提问卡片的选项按钮（radio/checkbox）──
+      if (isQuestionOptionButton(target)) {
+        if (isComposing(e)) return;
+        // 阻止普通 Enter 触发“选中并跳题/提交”。鼠标点击与空格选择不受影响。
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
     }
 
     let registered = false;
