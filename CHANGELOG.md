@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- The main composer is a Lexical `contenteditable` host (`[data-composer-input]`) since DSH 0.1.2, not a `textarea`. The old implementation only matched `textarea`, so plain Enter kept submitting the message. The plugin now detects the editable composer and turns plain Enter into a Shift+Enter gesture, reusing DSH's own `INSERT_LINE_BREAK` path; if the gesture cannot be applied it falls back to blocking the submit chain, so Enter still inserts a newline instead of sending.
+- The `/` and `@` trigger menu is now detected through `data-trigger-menu` plus `getClientRects()`, avoiding `offsetParent` returning null for fixed-positioned elements.
+- The non-session workspace-trigger state (composer not editable) is left untouched so its native Enter behavior survives.
+
 ## [1.1.0] - 2026-08-27
 
 ### Added
