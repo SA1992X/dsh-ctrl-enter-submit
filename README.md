@@ -45,16 +45,19 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 
 ## 工作原理
 
-插件在浏览器端的 `document` 捕获阶段拦截 `keydown` 事件：
+插件在浏览器端的 `document` 捕获阶段拦截 `keydown` 事件，因此一定早于编辑器根元素上的键盘监听与 React 在容器上的委托监听：
 
-- 目标限定为 composer 内的 `textarea`
-- 普通 Enter 与 Shift+Enter（无 Ctrl/Cmd 修饰、非输入法组合、非 `/`/`@` 菜单打开）：调用 `stopImmediatePropagation()` 阻止事件冒泡到 React 的 `onKeyDown` 处理器（即 DSH 的提交逻辑），但不调用 `preventDefault()`，因此 textarea 照常换行
-- Ctrl/Cmd+Enter：放行，由 DSH 正常提交
+- 主对话框输入面按版本分两种：
+  - DSH ≥ 0.1.2：composer 是 Lexical `contenteditable`（`[data-composer-input]`），普通 Enter 会被伪装成 Shift+Enter，由 DSH 自己的 `INSERT_LINE_BREAK` 命令插入换行，与用户按住 Shift 按 Enter 完全一致；伪装失败时退化为阻断提交链路
+  - 更早版本：composer 是 `textarea`，普通 Enter 与 Shift+Enter 调用 `stopImmediatePropagation()` 阻止 React 的 `onKeyDown`（即 DSH 的提交逻辑），但不调用 `preventDefault()`，因此照常换行
+- Ctrl/Cmd+Enter：一律放行，由 DSH 正常提交
+- `/`、`@` 触发菜单打开时不接管，Enter 仍然选择候选项；输入法组合状态（中文/日文/韩文输入等）也不接管
+- 无会话的工作区引导态（composer 不可编辑）不接管
 - 插件 Host 端为空操作，所有功能均在浏览器 Client 端实现
 
 ## 兼容性
 
-- 需要 dsh web `0.1.0-rc.6` 或更高版本
+- 需要 dsh web `0.1.0-rc.6` 或更高版本；已在 `0.1.2-rc.1` 的 contenteditable composer 上验证
 - 在 Windows、macOS、Linux 上均可工作（Ctrl 和 Cmd 都识别）
 
 ## 本地开发
@@ -64,6 +67,8 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 ```bash
 dsh plugin --profile web add ./dsh-ctrl-enter-submit
 ```
+
+DSH Desktop 用的是 `desktop` profile，把 `--profile web` 换成 `--profile desktop` 即可。
 
 ---
 
@@ -110,15 +115,19 @@ dsh plugin --profile web remove dsh-ctrl-enter-submit
 
 ## How it works
 
-The plugin intercepts `keydown` on `document` during the capture phase, scoped to the composer `textarea`:
+The plugin intercepts `keydown` on `document` during the capture phase, so it always runs before the editor root's keyboard listeners and React's delegated listeners:
 
-- Plain Enter and Shift+Enter (no Ctrl/Cmd modifier, not composing, no `/`/`@` menu open) call `stopImmediatePropagation()` so React's `onKeyDown` handler (DSH's submit logic) never sees it, but it does **not** call `preventDefault()`, so the textarea inserts a newline normally. Note DSH natively submits on Shift+Enter too, so the plugin also intercepts it to produce a newline.
-- Ctrl/Cmd+Enter is left untouched and submits as usual.
+- The composer input surface depends on the DSH version:
+  - DSH ≥ 0.1.2: the composer is a Lexical `contenteditable` host (`[data-composer-input]`); plain Enter is turned into a Shift+Enter gesture handled by DSH's own `INSERT_LINE_BREAK` command, exactly like holding Shift while pressing Enter. If the gesture cannot be applied, the plugin falls back to blocking the submit chain.
+  - Older versions: the composer is a `textarea`; plain Enter and Shift+Enter call `stopImmediatePropagation()` so React's `onKeyDown` (DSH's submit logic) never sees them, without calling `preventDefault()`, so the textarea still inserts a newline.
+- Ctrl/Cmd+Enter is always left untouched and submits as usual.
+- While the `/` or `@` trigger menu is open the key is not intercepted, and IME composition is never intercepted.
+- The non-session workspace-trigger state (composer not editable) is left untouched.
 - The host entry is a no-op; all behavior lives in the browser client.
 
 ## Compatibility
 
-- Requires dsh web `0.1.0-rc.6` or later.
+- Requires dsh web `0.1.0-rc.6` or later; verified against the contenteditable composer of `0.1.2-rc.1`.
 - Works on Windows, macOS, and Linux (both Ctrl and Cmd are recognized).
 
 ## License
